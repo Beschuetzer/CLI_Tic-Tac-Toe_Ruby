@@ -8,18 +8,58 @@ class Board
   @@spaces = 3
   @@line = " " * (@@chars_across/3) + "|" + " " * (@@chars_across/3) + "|" + " " * (@@chars_across/3)
   @@plays_available = [1,2,3,4,5,6,7,8,9] 
+  @@row_drawing_counter = 0
 
   def start
     #print instructions, get plays, and loop through until someone wins
+    print_instructions()
+    i = 1
+    k=1
+    draw_board
+    while @@plays_available && !@@is_a_winner do
+      if @@plays_available == []
+        puts "Looks like a draw!"
+        @@is_a_winner = true
+        break
+      end
+      get_move(i)
+      draw_board
+      evaluate_win if k >= 5
+      k += 1
+      if i >= 2
+        i = 1 
+        next
+      end
+      i += 1
+    end
+    begin                                      
+      puts "Play again?  Available options are 'y' and 'n': "
+      ans = gets.chomp.downcase
+    end while !ans.match(/\s*[yYnNxX]([eE][sS]|[oO])*\s*/)
+    if ans.match(/y/)
+      clear()
+      start()
+    end 
+  end
+
+  private
+  def clear()
+    @@winner = ""
+    @@is_a_winner = false
+    @@plays_available = [1,2,3,4,5,6,7,8,9] 
+    @@positions_played = [0,0,0,0,0,0,0,0,0]    
+    @@row_drawing_counter = 0
+  end
+  def print_instructions()
+    puts "\nTIC-TAC-TOE Instructions:".ljust(@@chars_across)
+    puts "Each square is represented by a number 1-9.  The top left square is 1 and the bottom right square is 9.\nGoing left to right increments by 1 and top to bottom by 3.".ljust(@@chars_across)
   end
 
   def get_move(player)
     raise "Player must be 1 or 2" if !player.between?(1,2)
     begin                                      
       print "Player #{player}'s turn.  Available options are #{@@plays_available}: "
-      desired_move = gets.chomp.to_i
-      # puts "desired_move: #{desired_move} and @@plays_available: #{@@plays_available}"
-      # puts "@@plays_available.include?(desired_move): #{!@@plays_available.include?(desired_move)}"
+      desired_move = gets.chomp.to_i     
     end while !@@plays_available.any?{|play|play == desired_move}
     if player == 1
       @@positions_played[desired_move-1] = 1 
@@ -41,18 +81,7 @@ class Board
     evaluate_win
     puts "#{@@winner} is the winner!" if @@is_a_winner
   end
-  
-  private
-  def get_winner(iteration, row_multiplier = 1)
-    puts "the winner is in @@positions_played[#{0+iteration*row_multiplier}]: "
-    if @@positions_played[0+iteration*row_multiplier] == 1
-      @@winner = "Player 1"
-    else 
-      @@winner = "Player 2"
-    end
-    @@is_a_winner = true
-  end
-
+ 
   def evaluate_win()
     (0..2).each {|iteration|
       #column win
@@ -72,6 +101,16 @@ class Board
     elsif @@positions_played[2] != 0 && @@positions_played[2] == @@positions_played[4] && @@positions_played[4] == @@positions_played[6]
       get_winner(2)
     end
+  end
+ 
+  def get_winner(iteration, row_multiplier = 1)
+    #puts "the winner is in @@positions_played[#{0+iteration*row_multiplier}]: "
+    if @@positions_played[0+iteration*row_multiplier] == 1
+      @@winner = "Player 1"
+    else 
+      @@winner = "Player 2"
+    end
+    @@is_a_winner = true
   end
 
   def draw_row(row_number)
@@ -99,11 +138,16 @@ class Board
       when 2
         @@line[index] = "O"
       else
-        @@line[index] = " "
+        if @@row_drawing_counter <= 2
+          @@line[index] = (3*(row_number-1)+i + 1).to_s
+        else
+          @@line[index] = " "
+        end
       end
       i+=1
     }
     puts @@line
+    @@row_drawing_counter += 1
   end
 
   def draw_line_breaks()
@@ -138,10 +182,10 @@ end
 #   board.draw_board()
 # }
 board = Board.new()
-board.draw_board()
-(1..4).each{|i|
-  board.get_move(1)
-  board.draw_board()
-  board.get_move(2)
-  board.draw_board()
-}
+board.start()
+# (1..4).each{|i|
+#   board.get_move(1)
+#   board.draw_board()
+#   board.get_move(2)
+#   board.draw_board()
+# }
